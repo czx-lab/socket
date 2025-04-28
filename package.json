@@ -1,0 +1,27 @@
+{
+  "name": "socket",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "start": "npm run build:live",
+    "build": "tsc -p .",
+    "build:live": "nodemon --watch src/**/*.ts --exec ts-node src/index.ts",
+    "test": "npx ts-node --project ./tsconfig.json ./src/filename.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/protobufjs": "^6.0.0",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.5.3",
+    "protobufjs": "^7.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "tslib": "^2.8.1"
+  }
+}
