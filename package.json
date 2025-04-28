@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node src/index.ts",
+    "clean": "rimraf dist",
+    "dev": "ts-node -r tsconfig-paths/register src/index.ts",
     "start": "npm run build:live",
     "build": "tsc -p .",
     "build:live": "nodemon --watch src/**/*.ts --exec ts-node src/index.ts",
@@ -19,6 +20,7 @@
     "prettier": "^3.5.3",
     "protobufjs": "^7.4.0",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {

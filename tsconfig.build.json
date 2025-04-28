@@ -1,11 +1,5 @@
 {
   "extends": "./tsconfig.json",
-  "ts-node": {
-    "transpileOnly": true,
-    "compilerOptions": {
-      "module": "commonjs"
-    }
-  },
   "compilerOptions": {
     "outDir": "./dist",
   },

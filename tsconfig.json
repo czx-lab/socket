@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
-    "lib": ["es5", "es6"],
+    "lib": ["es5", "es6", "DOM"],
     "target": "es6",
     "module": "commonjs",
     "rootDir": "src",
     "baseUrl": ".",
-    "paths": {},
+    "paths": {
+      "@/*": ["src/*"]
+    },
     // 允许编译javascript文件
     "allowJs": true,
     // 报告.js文件中的错误。与allowJs一起使用
@@ -51,6 +53,8 @@
     "outDir": "./dist",
     // 模块的解析策略
     // "moduleResolution": "node",
+    // 启用所有严格类型检查选项
+    "strict": true,     
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist", "test"]

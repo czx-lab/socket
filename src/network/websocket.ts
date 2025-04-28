@@ -10,10 +10,12 @@ const defaultRetryInterval = 1000
 // maxRetries: number - maximum number of retries before giving up
 // retryInterval: number - interval between retries in milliseconds
 // onMaxRetriesReached: () => void - callback function to be called when max retries are reached
+// onRetry: () => void - callback function to be called when retrying
 export type AuthReconnectOptions = boolean | {
     maxRetries?: number
     retryInterval?: number
     onMaxRetriesReached?: () => void
+    onRetry?: () => void
 }
 
 // WebSocket connection status
@@ -44,6 +46,9 @@ export type WebsocketConf = {
     authReconnectOptions?: AuthReconnectOptions
 }
 
+// Error: WebSocketService is already exist
+const ErrExist = new Error('WebSocketService is already exist') 
+
 class WebsocketService {
     // singleton instance
     private static instance: WebsocketService 
@@ -58,9 +63,7 @@ class WebsocketService {
     // connection status
     private _connStatus: ConnStatus = ConnStatus.Disconnected 
 
-    private constructor() {
-        this.connect()
-    }
+    private constructor() {}
 
     // singleton instance getter
     static getInstance(): WebsocketService {
@@ -96,8 +99,19 @@ class WebsocketService {
         this.socket && this.socket.close()
     }
 
+    // start the WebSocket connection
+    start() { 
+        if (this.socket) {
+            throw ErrExist // throw an error if the WebSocketService is already exist
+        }
+
+        // reset the retry count
+        this.retries = 0 
+        this.connect() // connect to the WebSocket server
+    }
+
     // connect to the WebSocket server
-    connect() { 
+    private connect() { 
         // create a new WebSocket instance
         this.socket = new WebSocket(this._conf.url) 
         // connection opened
@@ -106,14 +120,14 @@ class WebsocketService {
             this.emit(EventType.Connected)
         }
         // connection error
-        this.socket.onerror = () => {
+        this.socket.onerror = (event) => {
             this._connStatus = ConnStatus.Error
-            this.emit(EventType.Error)
+            this.emit(EventType.Error, event)
         }
         // connection closed 
-        this.socket.onclose = () => {
+        this.socket.onclose = (event) => {
             this._connStatus = ConnStatus.Disconnected
-            this.emit(EventType.Disconnected)
+            this.emit(EventType.Disconnected, event)
 
             // try to reconnect if reconnect options are defined
             // if reconnect options are a boolean, return true
@@ -132,13 +146,16 @@ class WebsocketService {
         }
 
         if (this._conf.authReconnectOptions) {
-            const { maxRetries, onMaxRetriesReached } = this._conf.authReconnectOptions
+            const { maxRetries, onMaxRetriesReached, onRetry } = this._conf.authReconnectOptions
             // check if maxRetries is defined
             if (!maxRetries) return false
 
             // check if maxRetries is reached
             if (this.retries < maxRetries) { 
                 this.retries++
+                
+                // call the retry callback function
+                onRetry && onRetry() 
                 return true
             }
 
