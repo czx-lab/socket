@@ -1,23 +1,4 @@
-// data structure for buffer data
-export type BufferData = { 
-    id: number
-    payload: Uint8Array<ArrayBuffer>
-}
-
-// Processor configuration
-// It is used to configure the processor
-export type ProcessorConf = {
-    littleEndian: boolean // little endian or big endian
-    messageLenType: MessageLenType
-}
-
-// length of the message
-export enum MessageLenType {
-    Uint8 = 1,  // 1 byte
-    Uint16,     // 2 bytes
-    _,          // reserved
-    Uint32      // 4 bytes
-}
+import { MessageProcessor, ProcessorConf, MessageLenType, BufferData, SocketType } from '@/network/processor'
 
 // Error: Buffer is too small
 const ErrBufferTooSmall = new Error('Buffer is too small') 
@@ -26,10 +7,12 @@ const ErrBufferInvalid = new Error('Buffer is invalid')
 
 // Processor class to process the buffer
 // It is used to decode the buffer by the length type
-class Processor {
+class Processor implements MessageProcessor {
     private _conf: ProcessorConf = {
         littleEndian: false,
-        messageLenType: MessageLenType.Uint16
+        statusCode: false,
+        messageLenType: MessageLenType.Uint16,
+        socketType: SocketType.WebSocket
     }
     // buffer to store the data
     private _buffer: Buffer<ArrayBufferLike> = Buffer.alloc(0) 
@@ -66,28 +49,34 @@ class Processor {
     // ```
     encode(id: number, data: any): Uint8Array {
         const buffer = data instanceof Uint8Array ? data : data.toArrayBuffer ? new Uint8Array(data.toArrayBuffer()) : Buffer.from(data as any)
-        const header = Buffer.alloc(this._conf.messageLenType*2) // Allocate header based on message length type
-        const bufferLength = buffer.length + this._conf.messageLenType
-    
-        // Helper function to get the appropriate write function
-        const getWriteFunction = (): ((value: number, offset?: number) => number) => {
+        const header = Buffer.alloc(this._conf.messageLenType + 2) // Allocate header based on message length type
+
+        if (this._conf.socketType == SocketType.WebSocket) {
+            header.writeUInt16BE(id, 0)
+            return Buffer.concat([header, buffer])
+        }
+
+         // Helper function to get the appropriate write function
+         const getWriteFunction = (): ((value: number, offset?: number) => number) => {
             switch (this._conf.messageLenType) {
                 case MessageLenType.Uint8:
-                    return header.writeUInt8
+                    return header.writeUInt8.bind(header)
                 case MessageLenType.Uint16:
                     return this._conf.littleEndian ? header.writeUInt16LE : header.writeUInt16BE
                 case MessageLenType.Uint32:
-                    return this._conf.littleEndian ? header.writeUInt32LE : header.writeUInt32BE
+                    return this._conf.littleEndian ? header.writeUInt32LE.bind(header) : header.writeUInt32BE.bind(header)
                 default:
                     throw new Error(`Unsupported message length type: ${this._conf.messageLenType}`)
             }
         }
+
+        const bufferLength = buffer.length + this._conf.messageLenType
     
-        const writeFunction = getWriteFunction()
-    
+        // Bind the function to the header instance
+        const writeFunction = getWriteFunction().bind(header) 
         // Write the buffer length and ID to the header
-        writeFunction.call(header, bufferLength, 0)
-        writeFunction.call(header, id, this._conf.messageLenType)
+        writeFunction(bufferLength, 0)
+        writeFunction(id, this._conf.messageLenType)
     
         // Concatenate the header and the buffer
         return Buffer.concat([header, buffer])
@@ -108,7 +97,12 @@ class Processor {
     // decode the buffer by the length type
     decodeArrayBuffer(data: ArrayBuffer): BufferData[] {
         const message = new Uint8Array(data)
-        return this.parse(Buffer.from(message))
+        if (this._conf.socketType === SocketType.WebSocket) {
+            const bufferdata = this.parseBuffer(Buffer.from(message.buffer))
+            return [bufferdata]
+        }
+
+        return this.parse(Buffer.from(message.buffer))
     }
 
     // parse the buffer by the length type
@@ -141,14 +135,31 @@ class Processor {
 
             // Extract message payload
             const payload = this._buffer.subarray(offset, offset + totalLength)
-            results.push({ id: offset, payload: new Uint8Array(payload) })
-
+            const bufferdata = this.parseBuffer(payload)
+            results.push(bufferdata)
             offset += totalLength
         }
 
         // Retain unprocessed data in the buffer
         this._buffer = this._buffer.subarray(offset)
         return results
+    }
+
+    private parseBuffer(buffer: Buffer): BufferData {
+        var code: number = 200 
+        var msgid: number = 0
+        var payload: Uint8Array
+        const dataview = new DataView(buffer.buffer)
+        if (this._conf.statusCode) {
+            code = dataview.getUint16(this._conf.messageLenType, this._conf.littleEndian)
+            msgid = dataview.getUint16(this._conf.messageLenType + 2, this._conf.littleEndian)
+            payload = buffer.subarray(this._conf.messageLenType + 4)
+        } else {
+            msgid = dataview.getUint16(this._conf.messageLenType, this._conf.littleEndian)
+            payload = buffer.subarray(this._conf.messageLenType + 2)
+        }
+
+        return {code: code, id: msgid, payload: payload}
     }
 }
 

@@ -8,10 +8,11 @@
     "paths": {
       "@/*": ["src/*"]
     },
+    "esModuleInterop": true,
     // 允许编译javascript文件
     "allowJs": true,
     // 报告.js文件中的错误。与allowJs一起使用
-    "checkJs": true,
+    "checkJs": false,
     // "plugins": [],
     // 若有未使用的局部变量则抛错
     "noUnusedLocals": false,
@@ -52,9 +53,10 @@
     // 输出文件的根目录
     "outDir": "./dist",
     // 模块的解析策略
-    // "moduleResolution": "node",
+    "moduleResolution": "node",
     // 启用所有严格类型检查选项
-    "strict": true,     
+    "strict": true,
+    "types" : ["node", "protobufjs"]
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": ["node_modules", "dist", "test"]
