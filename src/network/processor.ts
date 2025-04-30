@@ -40,5 +40,5 @@ export interface MessageProcessor {
     decodeArrayBuffer(data: ArrayBuffer): BufferData[]
     
     // encode the data by the length type
-    encode(id: number|string, data: any): Uint8Array 
+    encode(id: number|string, data: any): Uint8Array | string
 }

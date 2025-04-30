@@ -60,11 +60,11 @@ class Processor implements MessageProcessor {
          const getWriteFunction = (): ((value: number, offset?: number) => number) => {
             switch (this._conf.messageLenType) {
                 case MessageLenType.Uint8:
-                    return header.writeUInt8.bind(header)
+                    return header.writeUInt8
                 case MessageLenType.Uint16:
                     return this._conf.littleEndian ? header.writeUInt16LE : header.writeUInt16BE
                 case MessageLenType.Uint32:
-                    return this._conf.littleEndian ? header.writeUInt32LE.bind(header) : header.writeUInt32BE.bind(header)
+                    return this._conf.littleEndian ? header.writeUInt32LE : header.writeUInt32BE
                 default:
                     throw new Error(`Unsupported message length type: ${this._conf.messageLenType}`)
             }
@@ -113,23 +113,21 @@ class Processor implements MessageProcessor {
         let offset: number = 0
 
         while (offset + this._conf.messageLenType <= this._buffer.length) {
-            let msgLength = 0
-
-            // Determine message length based on the configured type
-            switch (this._conf.messageLenType) {
-                case MessageLenType.Uint8:
-                    msgLength = this._buffer.readUInt8(offset)
-                    break
-                case MessageLenType.Uint16:
-                    msgLength = this._conf.littleEndian ? this._buffer.readUInt16LE(offset) : this._buffer.readUInt16BE(offset)
-                    break
-                case MessageLenType.Uint32:
-                    msgLength = this._conf.littleEndian ? this._buffer.readUInt32LE(offset) : this._buffer.readUInt32BE(offset)
-                    break
-                default:
-                    throw ErrBufferInvalid
+            // Helper function to get the appropriate read function
+            const getReadFunction = (): ((offset?: number) => number) => {
+                switch (this._conf.messageLenType) {
+                    case MessageLenType.Uint8:
+                        return this._buffer.readUInt8
+                    case MessageLenType.Uint16:
+                        return this._conf.littleEndian ? this._buffer.readUInt16LE : this._buffer.readUInt16BE
+                    case MessageLenType.Uint32:
+                        return this._conf.littleEndian ? this._buffer.readUInt32LE : this._buffer.readUInt32BE
+                    default:
+                        throw new Error(`Unsupported message length type: ${this._conf.messageLenType}`)
+                }
             }
-
+            const readFunction = getReadFunction().bind(this._buffer) 
+            const msgLength = readFunction(offset)
             const totalLength = msgLength + this._conf.messageLenType
             if (offset + totalLength > this._buffer.length) break
 
