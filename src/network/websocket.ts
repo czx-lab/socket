@@ -219,4 +219,10 @@ class WebsocketService {
     }
 }
 
-export default WebsocketService
+declare global {
+    var instance: WebsocketService
+}
+
+!global.instance && (global.instance = WebsocketService.getInstance())
+
+export default global.instance
