@@ -1,4 +1,4 @@
-import WebsocketService, { EventType } from '@/network/websocket'
+import service, { EventType } from '@/network/websocket'
 import Processor from '@/network/processor/json'
 import BufferProc from '@/network/processor/protobuf'
 import { MessageLenType } from './network/processor'
@@ -19,7 +19,7 @@ bufferproc.conf = {
     messageLenType: MessageLenType.Empty,
     socketType: 1,
 }
-const service = WebsocketService.getInstance()
+
 service.conf = {
     url: 'ws://localhost:8080',
     authReconnectOptions: {

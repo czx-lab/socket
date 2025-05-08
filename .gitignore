@@ -1,2 +1,5 @@
 /node_modules
 /dist
+/src/game.ts
+/src/pb/gateway*
+/src/proto/gateway*
