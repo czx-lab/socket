@@ -88,7 +88,12 @@ class Processor implements MessageProcessor {
     // Uint32: 4 bytes
     // return the id and payload
     async decode(data: Blob): Promise<BufferData[]> {
-        const buffer = await data.arrayBuffer()
+        let buffer: ArrayBuffer | null = null
+        if (!Blob.prototype.arrayBuffer) {
+            buffer = await new Response(data).arrayBuffer()
+        } else {
+            buffer = await data.arrayBuffer()
+        }
         if (buffer.byteLength < this._conf.messageLenType) throw ErrBufferTooSmall
 
        return this.decodeArrayBuffer(buffer)
