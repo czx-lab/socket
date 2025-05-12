@@ -1,9 +1,8 @@
-import { MessageProcessor, ProcessorConf, MessageLenType, BufferData, SocketType } from '@/network/processor'
+import type {  MessageProcessor, ProcessorConf, BufferData } from '@/network/processor'
+import {MessageLenType, SocketType} from '@/network/processor'
 
 // Error: Buffer is too small
 const ErrBufferTooSmall = new Error('Buffer is too small') 
-// Error: Buffer is invalid
-const ErrBufferInvalid = new Error('Buffer is invalid') 
 
 // Processor class to process the buffer
 // It is used to decode the buffer by the length type
@@ -96,7 +95,7 @@ class Processor implements MessageProcessor {
         }
         if (buffer.byteLength < this._conf.messageLenType) throw ErrBufferTooSmall
 
-       return this.decodeArrayBuffer(buffer)
+        return this.decodeArrayBuffer(buffer)
     }
 
     // decode the buffer by the length type
